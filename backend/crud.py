@@ -26,3 +26,12 @@ def get_games(db:Session):
 # 게임 상세 조회
 def game_detail(db:Session, game_id:int):
     return db.query(Game).filter(Game.id == game_id).first()
+
+#게임 삭제
+def delete_game(db:Session, game_id:int):
+    game = db.query(Game).filter(Game.id == game_id).first()
+    if game:
+        db.delete(game)
+        db.commit()
+        return True
+    return False

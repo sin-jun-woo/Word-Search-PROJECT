@@ -3,11 +3,12 @@ from fastapi.security import OAuth2PasswordBearer, HTTPBearer, HTTPAuthorization
 from sqlalchemy.orm import Session
 from auth_utils import hash_password, verify_password, create_access_token, verify_token
 from schemas import UserCreate, UserLogin, UserResponse, Token, GameResponse, GameCreate
-from models import User
+from models import User, Game
 from database import engine, Base, get_db
 from crud import create_game as create_game_crud
 from crud import get_games as get_games_crud
 from crud import game_detail
+from crud import delete_game as delete_game_crud
 
 Base.metadata.create_all(bind=engine)
 
@@ -81,3 +82,16 @@ def read_game(game_id: int, db: Session = Depends(get_db)):
     if not game:
         raise HTTPException(status_code=404, detail="Game not found")
     return game
+
+#게임 삭제
+@app.delete("/games/{game_id}")
+def delete_game_endpoint(game_id:int, db:Session = Depends(get_db), current_user = Depends(get_current_user)):
+    game = db.query(Game).filter(Game.id == game_id).first()
+    if not game:
+        raise HTTPException(status_code=404, detail="Game not found")
+    
+    if game.created_by != current_user.id :
+        raise HTTPException(status_code=403, detail="Not authorized to delete this game")
+    
+    delete_game_crud(db, game_id)
+    return {"message": "Game deleted successfully"}
