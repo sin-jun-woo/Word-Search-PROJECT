@@ -106,3 +106,12 @@ def create_result_save(game_id: int, result_data: ResultCreate, db: Session = De
         raise HTTPException(status_code=404, detail="Game not found")
     
     return create_result_crud(db, game_id, result_data)
+
+#게임 결과 조회
+@app.get("/games/{game_id}/results", response_model=list[ResultResponse])
+def results_list(game_id: int, db: Session = Depends(get_db)):
+    game = db.query(Game).filter(Game.id == game_id).first()
+    if not game:
+        raise HTTPException(status_code=404, detail="Game not found")
+    
+    return results_detail(db, game_id)
