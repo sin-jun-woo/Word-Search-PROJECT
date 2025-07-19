@@ -22,3 +22,7 @@ def create_game(db: Session, game_data: GameCreate, user_id:int):
 # 게임 목록 조회
 def get_games(db:Session):
     return db.query(Game).all()
+
+# 게임 상세 조회
+def game_detail(db:Session, game_id:int):
+    return db.query(Game).filter(Game.id == game_id).first()

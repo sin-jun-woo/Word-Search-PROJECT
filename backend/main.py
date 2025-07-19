@@ -7,6 +7,7 @@ from models import User
 from database import engine, Base, get_db
 from crud import create_game as create_game_crud
 from crud import get_games as get_games_crud
+from crud import game_detail
 
 Base.metadata.create_all(bind=engine)
 
@@ -72,3 +73,11 @@ def create_game_endpoint(
 @app.get("/games", response_model=list[GameResponse])
 def list_games(db: Session = Depends(get_db)):
     return get_games_crud(db)
+
+#게임 상세 조회
+@app.get("/games/{game_id}", response_model=GameResponse)
+def read_game(game_id: int, db: Session = Depends(get_db)):
+    game = game_detail(db, game_id)
+    if not game:
+        raise HTTPException(status_code=404, detail="Game not found")
+    return game
