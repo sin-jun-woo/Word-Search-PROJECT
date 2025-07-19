@@ -1,6 +1,6 @@
 import json
 from sqlalchemy.orm import Session
-from models import Game, Result
+from models import Game, Result, Comment
 from schemas import GameCreate, ResultCreate
 
 # 게임 생성
@@ -54,3 +54,36 @@ def create_result(db:Session, game_id:int, result_data:ResultCreate):
 #게임 결과 조회
 def results_detail(db:Session, game_id:int):
     return db.query(Result).filter(Result.game_id == game_id).all()
+
+#댓글 기능
+def create_comment_crud(db: Session, game_id: int, user_id: int, content: str):
+    comment = Comment(
+        content=content,
+        user_id=user_id,
+        game_id=game_id
+        )
+    db.add(comment)
+    db.commit()
+    db.refresh(comment)
+    return comment
+
+def get_comments_by_game(db: Session, game_id: int):
+    return db.query(Comment).filter(Comment.game_id == game_id).order_by(Comment.created_at.desc()).all()
+
+def delete_comment_crud(db: Session, comment_id: int, user_id: int):
+    comment = db.query(Comment).filter(Comment.id == comment_id, Comment.user_id == user_id).first()
+    print(f"📝 삭제 요청 comment_id: {comment_id}, 요청 user_id: {user_id}")
+    if comment:
+        print(f"✅ DB에서 찾은 comment -> id: {comment.id}, 작성자 user_id: {comment.user_id}")
+    else:
+        print("❌ 해당 comment_id로 댓글을 찾을 수 없음")
+        
+    if not comment or comment.user_id != user_id:
+        print("⚠️ 삭제 불가: 댓글이 없거나 권한 없음")
+        return False  
+
+    # ✅ 삭제 실행
+    db.delete(comment)
+    db.commit()
+    print("✅ 댓글 삭제 완료!")
+    return True

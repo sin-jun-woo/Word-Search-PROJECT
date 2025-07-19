@@ -1,9 +1,9 @@
 from fastapi import FastAPI, Depends, HTTPException, status, Form
 from fastapi import WebSocket, WebSocketDisconnect, BackgroundTasks
-from fastapi.security import OAuth2PasswordBearer, HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from auth_utils import hash_password, verify_password, create_access_token, verify_token
-from schemas import UserCreate, UserLogin, UserResponse, Token, GameResponse, GameCreate, ResultResponse, ResultCreate
+from schemas import UserCreate, UserLogin, UserResponse, Token, GameResponse, GameCreate, ResultResponse, ResultCreate, CommentCreate, CommentResponse
 from models import User, Game
 from database import engine, Base, get_db
 from crud import create_game as create_game_crud
@@ -12,6 +12,8 @@ from crud import game_detail
 from crud import delete_game as delete_game_crud
 from crud import create_result as create_result_crud
 from crud import results_detail
+from crud import create_comment_crud, get_comments_by_game, delete_comment_crud
+
 
 Base.metadata.create_all(bind=engine)
 
@@ -156,3 +158,33 @@ async def broadcast_result(game_id: int, result_data: dict):
         for ws in game_connections[game_id]:
             await ws.send_json(result_data)
         print (f"game {game_id} 접속자에게 결과 전송됨")
+        
+#댓글 작성
+@app.post("/games/{game_id}/comments", response_model=CommentResponse)
+def create_comment(game_id: int, comment_data: CommentCreate, 
+                   db: Session = Depends(get_db), 
+                   current_user=Depends(get_current_user)):
+    game = db.query(Game).filter(Game.id == game_id).first()
+    if not game:
+        raise HTTPException(status_code=404, detail="Game not found")
+
+    comment = create_comment_crud(db, current_user.id, game_id, comment_data.content)
+    return comment
+
+
+#댓글 조회
+@app.get("/games/{game_id}/comments", response_model=list[CommentResponse])
+def list_comments(game_id: int, db: Session = Depends(get_db)):
+    comments = get_comments_by_game(db, game_id)
+    return comments
+
+
+#댓글 삭제
+@app.delete("/comments/{comment_id}")
+def delete_comment(comment_id: int,
+                   db: Session = Depends(get_db),
+                   current_user=Depends(get_current_user)):
+    success = delete_comment_crud(db, comment_id, current_user.id)
+    if not success:
+        raise HTTPException(status_code=403, detail="Not authorized or comment not found")
+    return {"message": "Comment deleted successfully"}

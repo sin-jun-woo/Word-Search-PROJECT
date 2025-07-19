@@ -62,3 +62,19 @@ class ResultResponse(BaseModel):
     
     class config:
         from_attributes = True
+    
+#댓글     
+class CommentBase(BaseModel):
+    content: str
+
+class CommentCreate(CommentBase):
+    pass
+    
+class CommentResponse(CommentBase):
+    id: int
+    user_id: int
+    game_id: int
+    created_at: datetime
+    
+    class config:
+        orm_mode = True
