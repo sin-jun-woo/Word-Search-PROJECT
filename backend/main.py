@@ -6,6 +6,7 @@ from schemas import UserCreate, UserLogin, UserResponse, Token, GameResponse, Ga
 from models import User
 from database import engine, Base, get_db
 from crud import create_game as create_game_crud
+from crud import get_games as get_games_crud
 
 Base.metadata.create_all(bind=engine)
 
@@ -66,3 +67,8 @@ def create_game_endpoint(
     current_user: User = Depends(get_current_user)
 ):
     return create_game_crud(db, game_data, current_user.id)
+
+#게임 목록 조회
+@app.get("/games", response_model=list[GameResponse])
+def list_games(db: Session = Depends(get_db)):
+    return get_games_crud(db)
