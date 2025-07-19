@@ -1,7 +1,7 @@
 import json
 from sqlalchemy.orm import Session
-from models import Game
-from schemas import GameCreate
+from models import Game, Result
+from schemas import GameCreate, ResultCreate
 
 # 게임 생성
 def create_game(db: Session, game_data: GameCreate, user_id:int):
@@ -35,3 +35,21 @@ def delete_game(db:Session, game_id:int):
         db.commit()
         return True
     return False
+
+#게임 결과 저장
+def create_result(db:Session, game_id:int, result_data:ResultCreate):
+    found_words_json = json.dumps(result_data.found_words, ensure_ascii=False)
+    result = Result(
+        game_id = game_id,
+        player_name = result_data.player_name,
+        time_token = result_data.time_token,
+        found_words = found_words_json
+    )
+    db.add(result)
+    db.commit()
+    db.refresh(result)
+    return result
+
+#게임 결과 조회
+def results_detail(db:Session, game_id:int):
+    return db.query(Result).filter(Result.game_id == game_id).all()

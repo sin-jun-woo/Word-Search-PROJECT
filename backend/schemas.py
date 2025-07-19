@@ -45,3 +45,20 @@ class GameResponse(BaseModel):
     
     class config:
         from_attributes = True
+        
+#게임 결과 저장
+class ResultCreate(BaseModel):
+    player_name: str
+    time_token: int
+    found_words : List[str]
+    
+class ResultResponse(BaseModel):
+    id: int
+    game_id: int
+    player_name: str
+    time_token: int
+    found_words: str
+    create_at: datetime
+    
+    class config:
+        from_attributes = True

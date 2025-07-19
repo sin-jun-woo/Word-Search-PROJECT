@@ -2,13 +2,15 @@ from fastapi import FastAPI, Depends, HTTPException, status, Form
 from fastapi.security import OAuth2PasswordBearer, HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from auth_utils import hash_password, verify_password, create_access_token, verify_token
-from schemas import UserCreate, UserLogin, UserResponse, Token, GameResponse, GameCreate
+from schemas import UserCreate, UserLogin, UserResponse, Token, GameResponse, GameCreate, ResultResponse, ResultCreate
 from models import User, Game
 from database import engine, Base, get_db
 from crud import create_game as create_game_crud
 from crud import get_games as get_games_crud
 from crud import game_detail
 from crud import delete_game as delete_game_crud
+from crud import create_result as create_result_crud
+from crud import results_detail
 
 Base.metadata.create_all(bind=engine)
 
@@ -95,3 +97,12 @@ def delete_game_endpoint(game_id:int, db:Session = Depends(get_db), current_user
     
     delete_game_crud(db, game_id)
     return {"message": "Game deleted successfully"}
+
+#게임 결과 저장
+@app.post("/games/{game_id}/results", response_model=ResultResponse)
+def create_result_save(game_id: int, result_data: ResultCreate, db: Session = Depends(get_db)):
+    game = db.query(Game).filter(Game.id == game_id).first()
+    if not game:
+        raise HTTPException(status_code=404, detail="Game not found")
+    
+    return create_result_crud(db, game_id, result_data)

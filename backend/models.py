@@ -34,7 +34,7 @@ class Result(Base):
     game_id = Column(Integer, ForeignKey("Games.id"))
     player_name = Column(String, nullable=False)
     time_token = Column(Integer)
-    found_word = Column(String)
+    found_words = Column(String)
     create_at = Column(DateTime, default=datetime.utcnow)
     
     game = relationship("Game", back_populates="results")
