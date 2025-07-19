@@ -28,3 +28,20 @@ class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
     
+#게임 생성 요청
+class GameCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    word_list: List[str]
+    
+#게임 응답
+class GameResponse(BaseModel):
+    id :int
+    title: str
+    description: Optional[str] = None
+    word_list: str
+    created_by: int
+    create_at: datetime
+    
+    class config:
+        from_attributes = True

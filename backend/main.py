@@ -2,9 +2,10 @@ from fastapi import FastAPI, Depends, HTTPException, status, Form
 from fastapi.security import OAuth2PasswordBearer, HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from auth_utils import hash_password, verify_password, create_access_token, verify_token
-from schemas import UserCreate, UserLogin, UserResponse, Token
+from schemas import UserCreate, UserLogin, UserResponse, Token, GameResponse, GameCreate
 from models import User
 from database import engine, Base, get_db
+from crud import create_game as create_game_crud
 
 Base.metadata.create_all(bind=engine)
 
@@ -56,3 +57,12 @@ def login(user_data: UserLogin, db: Session = Depends(get_db)):
 @app.get("/auth/me", response_model=UserResponse)
 def me(current_user: User = Depends(get_current_user)):
     return current_user
+
+#게임 생성 
+@app.post("/games", response_model=GameResponse)
+def create_game_endpoint(
+    game_data: GameCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    return create_game_crud(db, game_data, current_user.id)
