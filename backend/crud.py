@@ -72,18 +72,18 @@ def get_comments_by_game(db: Session, game_id: int):
 
 def delete_comment_crud(db: Session, comment_id: int, user_id: int):
     comment = db.query(Comment).filter(Comment.id == comment_id, Comment.user_id == user_id).first()
-    print(f"📝 삭제 요청 comment_id: {comment_id}, 요청 user_id: {user_id}")
+    print(f"삭제 요청 comment_id: {comment_id}, 요청 user_id: {user_id}")
     if comment:
-        print(f"✅ DB에서 찾은 comment -> id: {comment.id}, 작성자 user_id: {comment.user_id}")
+        print(f"DB에서 찾은 comment -> id: {comment.id}, 작성자 user_id: {comment.user_id}")
     else:
-        print("❌ 해당 comment_id로 댓글을 찾을 수 없음")
+        print("해당 comment_id로 댓글을 찾을 수 없음")
         
     if not comment or comment.user_id != user_id:
-        print("⚠️ 삭제 불가: 댓글이 없거나 권한 없음")
+        print("삭제 불가: 댓글이 없거나 권한 없음")
         return False  
 
     # ✅ 삭제 실행
     db.delete(comment)
     db.commit()
-    print("✅ 댓글 삭제 완료!")
+    print("댓글 삭제 완료!")
     return True
