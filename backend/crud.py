@@ -48,6 +48,7 @@ def create_result(db:Session, game_id:int, result_data:ResultCreate):
     db.add(result)
     db.commit()
     db.refresh(result)
+    
     return result
 
 #게임 결과 조회

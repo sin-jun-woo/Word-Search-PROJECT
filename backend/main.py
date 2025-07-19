@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException, status, Form
+from fastapi import WebSocket, WebSocketDisconnect, BackgroundTasks
 from fastapi.security import OAuth2PasswordBearer, HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from auth_utils import hash_password, verify_password, create_access_token, verify_token
@@ -100,12 +101,25 @@ def delete_game_endpoint(game_id:int, db:Session = Depends(get_db), current_user
 
 #게임 결과 저장
 @app.post("/games/{game_id}/results", response_model=ResultResponse)
-def create_result_save(game_id: int, result_data: ResultCreate, db: Session = Depends(get_db)):
+async def create_result_save(game_id: int, result_data: ResultCreate,background_tasks: BackgroundTasks,  db: Session = Depends(get_db) ):
     game = db.query(Game).filter(Game.id == game_id).first()
     if not game:
         raise HTTPException(status_code=404, detail="Game not found")
     
-    return create_result_crud(db, game_id, result_data)
+    result = create_result_crud(db, game_id, result_data)
+    
+    print(f"📡 브로드캐스트 실행: 게임 {game_id}")
+
+    background_tasks.add_task(
+        broadcast_result, game_id, {
+            "player_name": result.player_name,
+            "time_token": result.time_token,
+            "found_words": result.found_words,
+            "create_at": str(result.create_at)
+        })
+    
+    
+    return result
 
 #게임 결과 조회
 @app.get("/games/{game_id}/results", response_model=list[ResultResponse])
@@ -115,3 +129,30 @@ def results_list(game_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Game not found")
     
     return results_detail(db, game_id)
+
+#WebSocket
+game_connections: dict[int, list[WebSocket]] = {}
+
+@app.websocket("/ws/games/{game_id}/results")
+async def websocket_game_results(websocket: WebSocket, game_id: int):
+    await websocket.accept()
+    print(f" WebSocket 연결됨 → 게임 {game_id}")
+    
+    if game_id not in game_connections:
+        game_connections[game_id] = []
+    game_connections[game_id].append(websocket)
+    print(f"WebSocket connected for game {game_id}, current connections {len(game_connections[game_id])}명")
+    
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        game_connections[game_id].remove(websocket)
+        print(f"WebSocket disconnecting -> game {game_id}, current connections {len(game_connections[game_id])}명")
+        
+#브로드캐스트 함수
+async def broadcast_result(game_id: int, result_data: dict):
+    if game_id in game_connections:
+        for ws in game_connections[game_id]:
+            await ws.send_json(result_data)
+        print (f"game {game_id} 접속자에게 결과 전송됨")
