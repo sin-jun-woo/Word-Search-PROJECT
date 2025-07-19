@@ -82,7 +82,7 @@ def delete_comment_crud(db: Session, comment_id: int, user_id: int):
         print("삭제 불가: 댓글이 없거나 권한 없음")
         return False  
 
-    # ✅ 삭제 실행
+    # 삭제 실행
     db.delete(comment)
     db.commit()
     print("댓글 삭제 완료!")
